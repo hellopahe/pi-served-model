@@ -1,14 +1,16 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Text, truncateToWidth } from "@earendil-works/pi-tui";
 import {
   buildSnapshot,
   extractPayloadModel,
   extractServedFromMessage,
-  formatStatus,
-  formatWidget,
+  formatLine,
   resolveRequested,
+  shouldShow,
 } from "./served-model.mjs";
 
 const KEY = "pi-served-model";
+const ORANGE = "\x1b[38;2;217;119;87m";
 
 type Snapshot = ReturnType<typeof buildSnapshot>;
 
@@ -26,35 +28,38 @@ export default function (pi: ExtensionAPI) {
   const requestedId = (ctx: ExtensionContext) =>
     resolveRequested({ payloadModel, selectedId: selected(ctx).id });
 
-  const paint = (ctx: ExtensionContext) => {
+  const hide = (ctx: ExtensionContext) => {
     if (!ctx.hasUI) return;
-    const text = formatStatus(snapshot, { waiting });
-    const themed = snapshot.mismatch && ctx.ui.theme?.fg ? ctx.ui.theme.fg("warning", text) : text;
-    ctx.ui.setStatus(KEY, themed);
-    ctx.ui.setWidget(KEY, snapshot.mismatch ? formatWidget(snapshot) : undefined);
+    ctx.ui.setWidget(KEY, undefined);
   };
 
-  const resetToSelection = (ctx: ExtensionContext, keepWaiting = false) => {
-    const { provider, id } = selected(ctx);
-    snapshot = buildSnapshot({
-      provider,
-      requested: resolveRequested({ payloadModel, selectedId: id }),
-    });
-    waiting = keepWaiting;
-    paint(ctx);
+  const paint = (ctx: ExtensionContext) => {
+    if (!ctx.hasUI) return;
+    if (ctx.mode !== "tui" || !shouldShow(snapshot, waiting)) {
+      hide(ctx);
+      return;
+    }
+    const line = formatLine(snapshot, { waiting });
+    ctx.ui.setWidget(
+      KEY,
+      (_tui, theme) => ({
+        render(width: number) {
+          if (!line || width < 1) return [];
+          const text = theme.italic(`${ORANGE}${line}\x1b[39m`);
+          return new Text(text, 0, 0).render(width).map((row) => truncateToWidth(row, width, ""));
+        },
+        invalidate() {},
+      }),
+      { placement: "aboveEditor" },
+    );
   };
 
   pi.on("session_start", (_event, ctx) => {
     payloadModel = undefined;
+    waiting = false;
     notified = false;
-    resetToSelection(ctx);
-  });
-
-  pi.on("model_select", (_event, ctx) => {
-    if (waiting) return;
-    payloadModel = undefined;
-    notified = false;
-    resetToSelection(ctx);
+    snapshot = buildSnapshot({});
+    hide(ctx);
   });
 
   pi.on("before_provider_request", (event, ctx) => {
@@ -80,7 +85,7 @@ export default function (pi: ExtensionAPI) {
     paint(ctx);
     if (snapshot.mismatch && !notified && ctx.hasUI) {
       notified = true;
-      ctx.ui.notify(formatStatus(snapshot), "warning");
+      ctx.ui.notify(formatLine(snapshot), "warning");
     }
   };
 
@@ -95,16 +100,15 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", (_event, ctx) => {
-    if (!ctx.hasUI) return;
-    ctx.ui.setStatus(KEY, undefined);
-    ctx.ui.setWidget(KEY, undefined);
+    hide(ctx);
   });
 
   pi.registerCommand("served-model", {
     description: "Show requested vs served model id from the last provider response",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) return;
-      ctx.ui.notify(formatStatus(snapshot, { waiting }), snapshot.mismatch ? "warning" : "info");
+      const line = formatLine(snapshot, { waiting });
+      ctx.ui.notify(line || "还没有模型响应", snapshot.mismatch ? "warning" : "info");
     },
   });
 }

@@ -2,9 +2,9 @@
 
 [English](README.md)
 
-为 Pi 在状态栏显示**本次请求发出的模型 id**和**响应里回写的模型 id**。
+为 Pi 在输入框上方的 widget 栈里显示**本次请求发出的模型 id**和**响应里回写的模型 id**，紧挨在先注册的 extension widget 下方，例如 pi-live-status。
 
-OpenAI Chat Completions 在 SSE `model` 与请求 id 不同时写入 `AssistantMessage.responseModel`。Anthropic Messages 会在 `message_start` 用 `event.message.model` 覆盖 `AssistantMessage.model`。状态在每次 `message_update` 更新。id 不一致时，输入框上方会出现两行对照，并且本轮只提醒一次。
+只在 `before_provider_request` 之后出现。空闲、尚未发请求时不显示。OpenAI Chat Completions 在 SSE `model` 与请求 id 不同时写入 `AssistantMessage.responseModel`。Anthropic Messages 会在 `message_start` 用 `event.message.model` 覆盖 `AssistantMessage.model`。id 不一致时本轮只提醒一次。
 
 ## 安装
 
@@ -32,14 +32,16 @@ pi remove git:github.com/hellopahe/pi-served-model
 
 ## 显示
 
-| 状态 | 状态栏 |
-| --- | --- |
-| 空闲 | `模型 openai/gpt-5` |
-| 已发出请求，尚未读到模型字段 | `请求 openai/gpt-5 · 等待响应` |
-| 响应 id 与请求相同 | `模型 openai/gpt-5` |
-| 响应 id 与请求不同 | `请求 openai/gpt-5 · 返回 gpt-4o-mini` |
+位置是 `aboveEditor` widget 栈，排在先注册的 widget 下面。颜色和斜体与 pi-live-status 相同。
 
-`/served-model` 用 notify 再显示一次当前行。
+| 状态 | 显示 |
+| --- | --- |
+| 空闲，还没发请求 | 隐藏 |
+| 已发出请求，尚未读到模型字段 | `模型 · 请求 openai/gpt-5 · 等待响应` |
+| 响应 id 与请求相同 | `模型 · 返回 gpt-5` |
+| 响应 id 与请求不同 | `模型 · 请求 openai/gpt-5 · 返回 gpt-4o-mini` |
+
+`/served-model` 用 notify 再显示一次当前行；还没有请求时显示 `还没有模型响应`。
 
 ## 返回 id 的来源
 
@@ -56,7 +58,7 @@ openai-responses、openai-codex-responses、google-generative-ai 目前不写 `r
 
 这是独立 extension，不编辑 Pi 安装目录内的源码、用户设置、模型配置、提示词、请求头或请求体，也不写请求日志。
 
-它读取 `before_provider_request`、`message_update`、`message_end`。交互式 TUI 和 RPC 可显示状态栏和不一致时的 widget。
+它读取 `before_provider_request`、`message_update`、`message_end`。widget 只在交互式 TUI 中绘制。
 
 ## 兼容性
 
@@ -72,7 +74,7 @@ npm ci
 npm test
 ```
 
-测试覆盖 payload 解析、`responseModel` 与 `message.model`、一致/不一致文案，以及经 Pi loader 的事件路径。无需 API Key。
+测试覆盖 payload 解析、`responseModel` 与 `message.model`、空闲隐藏、`aboveEditor` 位置、一致/不一致文案，以及经 Pi loader 的事件路径。无需 API Key。
 
 ## 许可证
 

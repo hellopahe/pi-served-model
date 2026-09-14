@@ -2,9 +2,9 @@
 
 [中文说明](README.zh-CN.md)
 
-A Pi extension that shows the model id the provider put on the wire, next to the id Pi sent.
+A Pi extension that shows the model id the provider put on the wire, in an `aboveEditor` widget stacked under other editor widgets such as pi-live-status.
 
-The footer updates on each `message_update`. OpenAI Chat Completions fill `AssistantMessage.responseModel` when the SSE `model` field differs from the request. Anthropic Messages overwrite `AssistantMessage.model` with `message_start.model`. A mismatch also opens a widget above the editor and fires one warning notify per request.
+The line appears only after `before_provider_request`. Idle sessions stay blank. OpenAI Chat Completions fill `AssistantMessage.responseModel` when the SSE `model` field differs from the request. Anthropic Messages overwrite `AssistantMessage.model` with `message_start.model`. A mismatch fires one warning notify per request.
 
 ## Install
 
@@ -32,14 +32,16 @@ For a manual installation, delete the copied files. Reload or restart Pi afterwa
 
 ## Display
 
-| State | Footer |
-| --- | --- |
-| Idle | `模型 openai/gpt-5` |
-| Request sent, no model field yet | `请求 openai/gpt-5 · 等待响应` |
-| Response model matches the request | `模型 openai/gpt-5` |
-| Response model differs | `请求 openai/gpt-5 · 返回 gpt-4o-mini` |
+The widget sits in the `aboveEditor` stack, directly under widgets that registered earlier. It uses the same orange italic styling as pi-live-status.
 
-`/served-model` repeats the latest line as a notify.
+| State | Widget |
+| --- | --- |
+| Idle, no request yet | hidden |
+| Request sent, no model field yet | `模型 · 请求 openai/gpt-5 · 等待响应` |
+| Response model matches the request | `模型 · 返回 gpt-5` |
+| Response model differs | `模型 · 请求 openai/gpt-5 · 返回 gpt-4o-mini` |
+
+`/served-model` repeats the latest line as a notify, or `还没有模型响应` when nothing has been sent.
 
 ## What the served id is
 
@@ -56,7 +58,7 @@ openai-responses, openai-codex-responses, and google-generative-ai currently lea
 
 This is an extension. It does not edit Pi's installed source files, settings, model catalog, prompts, headers, or request payloads. It does not write request logs.
 
-It reads `before_provider_request`, `message_update`, and `message_end`. Interactive TUI and RPC can show status and the mismatch widget; print and JSON modes keep the same bookkeeping for `/served-model` when UI exists.
+It reads `before_provider_request`, `message_update`, and `message_end`. The widget is TUI-only. `/served-model` still reports the last line when UI exists.
 
 ## Compatibility
 
@@ -72,7 +74,7 @@ npm ci
 npm test
 ```
 
-Tests cover payload extraction, `responseModel` vs `message.model`, match and mismatch rendering, and the extension event path through Pi's loader. No provider account or API key is needed.
+Tests cover payload extraction, `responseModel` vs `message.model`, idle hiding, `aboveEditor` placement, match and mismatch rendering, and the extension event path through Pi's loader. No provider account or API key is needed.
 
 ## License
 

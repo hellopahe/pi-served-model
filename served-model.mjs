@@ -50,20 +50,16 @@ export function buildSnapshot({ provider, requested, served, servedSource } = {}
   };
 }
 
-export function formatStatus(snapshot, { waiting = false } = {}) {
-  const req = formatQualified(snapshot?.provider, snapshot?.requested);
-  if (!req) return "模型 未选择";
-  if (waiting && !snapshot.served) return `请求 ${req} · 等待响应`;
-  if (!snapshot.served) return `模型 ${req}`;
-  if (snapshot.mismatch) return `请求 ${req} · 返回 ${snapshot.served}`;
-  return `模型 ${req}`;
+export function shouldShow(snapshot, waiting = false) {
+  return Boolean(waiting || snapshot?.served);
 }
 
-export function formatWidget(snapshot) {
+export function formatLine(snapshot, { waiting = false } = {}) {
   const req = formatQualified(snapshot?.provider, snapshot?.requested);
-  return [
-    `请求  ${req}`,
-    `返回  ${snapshot?.served ?? ""}`,
-    `来源  ${snapshot?.servedSource ?? ""}`,
-  ];
+  if (waiting && !snapshot?.served) {
+    return req ? `模型 · 请求 ${req} · 等待响应` : "模型 · 等待响应";
+  }
+  if (!snapshot?.served) return "";
+  if (snapshot.mismatch) return `模型 · 请求 ${req} · 返回 ${snapshot.served}`;
+  return `模型 · 返回 ${snapshot.served}`;
 }

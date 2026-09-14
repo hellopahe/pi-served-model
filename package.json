@@ -1,6 +1,6 @@
 {
   "name": "pi-served-model",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Show requested vs served model id from each Pi provider response.",
   "type": "module",
   "license": "MIT",
@@ -36,9 +36,11 @@
     "test": "node --test --test-timeout=20000 test/served-model.test.mjs"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.85.1"
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "@earendil-works/pi-tui": "0.85.1"
   }
 }
