@@ -1,0 +1,44 @@
+{
+  "name": "pi-served-model",
+  "version": "0.1.0",
+  "description": "Show requested vs served model id from each Pi provider response.",
+  "type": "module",
+  "license": "MIT",
+  "author": "hellopahe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hellopahe/pi-served-model.git"
+  },
+  "bugs": "https://github.com/hellopahe/pi-served-model/issues",
+  "homepage": "https://github.com/hellopahe/pi-served-model#readme",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "model",
+    "observability"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "pi-served-model.ts",
+    "served-model.mjs",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./pi-served-model.ts"
+    ]
+  },
+  "scripts": {
+    "test": "node --test --test-timeout=20000 test/served-model.test.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1"
+  }
+}
